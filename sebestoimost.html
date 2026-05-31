@@ -349,7 +349,7 @@ tr:hover td{background:var(--surface2)}
 </div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbzNSpMkcREihHN2SsUt9EHkYXTri5QeP4RsTB3s5Oe7gQ9dlv2Q2s7PPp3VTfEanpiZCw/exec';
+const API='https://script.google.com/macros/s/AKfycbwbBhSTyWFnHlVnFOr2_Yy4esJk3HREGZ9587pu8Ji0Y_RcAVCYMLbTf_amxYljZQYixQ/exec';
 
 let prices={siryo:[],stanki:[],krasitel:[],upak:[]};
 let products=[];
@@ -360,9 +360,20 @@ const fmt=n=>Math.round(n).toLocaleString('ru-RU');
 const fmtD=(n,d=2)=>parseFloat(n.toFixed(d)).toLocaleString('ru-RU');
 
 async function apiFetch(params){
-  const r=await fetch(API+'?'+new URLSearchParams(params));
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
+  const readActions = ['getPrices','getProducts','getPriceHistory'];
+  if(readActions.includes(params.action)){
+    const r=await fetch(API+'?'+new URLSearchParams(params));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  } else {
+    const r=await fetch(API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(params),
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }
 }
 
 async function loadData(){
