@@ -349,7 +349,7 @@ tr:hover td{background:var(--surface2)}
 </div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbwnu-RnR1-fVubHcuJ2W3AldNJMc7uc7lqniZpasxNfyb2g_eL1ksktQNaqku0dLkLGrw/exec';
+const API='https://script.google.com/macros/s/AKfycbx_xdirA-Hd0ipLYZpmOZUI7Yt0HhHthQUVVaJCKJNQFVBJf1lCDGUY-C-o8XT6lFUPgA/exec';
 
 let prices={siryo:[],stanki:[],krasitel:[],upak:[]};
 let products=[];
@@ -549,7 +549,12 @@ async function saveProduct(){
   btn.textContent='Сохранение...';btn.disabled=true;
   const uItems=[1,2,3].map(i=>({name:document.getElementById(`u${i}-name`).value||'',narh:parseFloat(document.getElementById(`u${i}-narh`).value)||0,qty:parseFloat(document.getElementById(`u${i}-qty`).value)||0})).filter(x=>x.narh>0&&x.qty>0);
   let uTotal=0; uItems.forEach(it=>uTotal+=it.narh/it.qty);
-  const params={action:'saveProduct',klient:document.getElementById('c-klient').value||'',product:document.getElementById('c-product').value||'',kod:document.getElementById('c-kod').value||'',stanok:document.getElementById('c-stanok').value||'',sutki:document.getElementById('c-sutki').value||0,chasov:document.getElementById('c-chasov').value||18,cikl:document.getElementById('c-cikl').value||0,gnezd:document.getElementById('c-gnezd').value||0,tirazh:document.getElementById('c-tirazh').value||0,perenal:document.getElementById('c-perenal').value||0,koef,gramm:document.getElementById('r-gramm').value||0,siryo1:document.getElementById('r1-name').value||'',siryo1Narh:document.getElementById('r1-narh').value||0,siryo1Pct:document.getElementById('r1-pct').value||0,siryo2:document.getElementById('r2-name').value||'',siryo2Narh:document.getElementById('r2-narh').value||0,siryo2Pct:document.getElementById('r2-pct').value||0,ugar:document.getElementById('r-ugar').value||0,krasitel:document.getElementById('c-kras-sel').value||'',krasNarh:document.getElementById('k-narh').value||0,krasPct:document.getElementById('k-pct').value||0,upak:JSON.stringify(uItems),upakTotal:uTotal,usluga:document.getElementById('c-usluga').value||0,siryoTotal:document.getElementById('r-total').value||0,krasSeb:document.getElementById('k-seb').value||0,pfUsd:document.getElementById('pf-usd').value||0,pfKurs:document.getElementById('pf-kurs').value||0,pfCikls:document.getElementById('pf-cikls').value||0,pfGnezd:document.getElementById('pf-gnezd').value||0,pfPerSht:document.getElementById('pf-per-sht').value||0,total};
+  // Сохраняем чистые числа для отправки
+  const _usluga = usluga;
+  const _siryoTotal = rTotal;
+  const _krasSeb = kSeb;
+
+  const params={action:'saveProduct',klient:document.getElementById('c-klient').value||'',product:document.getElementById('c-product').value||'',kod:document.getElementById('c-kod').value||'',stanok:document.getElementById('c-stanok').value||'',sutki:document.getElementById('c-sutki').value||0,chasov:document.getElementById('c-chasov').value||18,cikl:document.getElementById('c-cikl').value||0,gnezd:document.getElementById('c-gnezd').value||0,tirazh:document.getElementById('c-tirazh').value||0,perenal:document.getElementById('c-perenal').value||0,koef,gramm:document.getElementById('r-gramm').value||0,siryo1:document.getElementById('r1-name').value||'',siryo1Narh:document.getElementById('r1-narh').value||0,siryo1Pct:document.getElementById('r1-pct').value||0,siryo2:document.getElementById('r2-name').value||'',siryo2Narh:document.getElementById('r2-narh').value||0,siryo2Pct:document.getElementById('r2-pct').value||0,ugar:document.getElementById('r-ugar').value||0,krasitel:document.getElementById('c-kras-sel').value||'',krasNarh:document.getElementById('k-narh').value||0,krasPct:document.getElementById('k-pct').value||0,upak:JSON.stringify(uItems),upakTotal:uTotal,usluga:_usluga,siryoTotal:_siryoTotal,krasSeb:_krasSeb,pfUsd:document.getElementById('pf-usd').value||0,pfKurs:document.getElementById('pf-kurs').value||0,pfCikls:document.getElementById('pf-cikls').value||0,pfGnezd:document.getElementById('pf-gnezd').value||0,pfPerSht:pfPerSht,total};
   try{
     const res=await apiFetch(params);
     if(res.error)throw new Error(res.error);
