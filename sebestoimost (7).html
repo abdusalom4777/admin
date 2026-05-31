@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Себестоимость — uzmould</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#f7f6f2;--surface:#fff;--surface2:#f0efe9;--border:rgba(0,0,0,.08);
+  --text:#1a1917;--muted:#6b6a65;
+  --green:#1D9E75;--green-bg:#EAF3DE;--green-text:#3B6D11;
+  --amber:#BA7517;--amber-bg:#FAEEDA;--amber-text:#854F0B;
+  --red:#A32D2D;--red-bg:#FCEBEB;
+  --blue:#378ADD;--blue-bg:#E6F1FB;--blue-text:#185FA5;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+header{background:var(--text);color:#fff;padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500}
+.logo-icon{width:26px;height:26px;background:rgba(255,255,255,.15);border-radius:6px;display:flex;align-items:center;justify-content:center}
+#sync-status{font-size:11px;opacity:.6;display:flex;align-items:center;gap:5px}
+#sync-status.ok{opacity:1;color:#6fcf97}
+#sync-status.err{opacity:1;color:#ff6b6b}
+.container{max-width:960px;margin:0 auto;padding:20px 16px}
+.tabs{display:flex;background:var(--surface);border-radius:10px;padding:4px;margin-bottom:20px;border:0.5px solid var(--border);gap:2px}
+.tab{flex:1;padding:8px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);border-radius:7px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .15s}
+.tab.active{background:var(--text);color:#fff}
+.tab i{font-size:14px}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.card-head{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.card-title{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.card-title i{font-size:14px;color:var(--muted)}
+.card-body{padding:14px 16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:600px){.g3,.g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+input,select,textarea{width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--text);background:var(--surface)}
+input[readonly]{color:var(--muted);cursor:default}
+.btn{padding:9px 18px;border-radius:8px;border:0.5px solid var(--border);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--text);color:#fff;border-color:transparent}
+.btn-primary:hover{opacity:.85;background:var(--text)}
+.btn-sm{padding:5px 11px;font-size:11px}
+.ab{padding:7px 14px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.ab.active{background:var(--text);color:#fff;border-color:transparent}
+.hint{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5}
+.result-box{background:var(--text);border-radius:12px;padding:18px;color:#fff;margin-top:14px}
+.result-main{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.result-label{font-size:11px;opacity:.6;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.result-val{font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;color:#6fcf97}
+.result-price{font-size:20px;font-weight:300;color:#f8d57e}
+.fbox{font-size:12px;background:rgba(255,255,255,.07);border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.frow{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.07);padding:5px 0;font-size:12px}
+.frow:last-child{border-bottom:none;font-weight:600;font-size:14px;padding-top:8px;color:#6fcf97}
+.frow.perenal .fname{color:#f8d57e}
+.fname{flex:1;opacity:.85}
+.fformula{color:rgba(255,255,255,.35);font-size:11px;flex:1.5;text-align:center}
+.fval{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500}
+.bdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.bi{background:rgba(255,255,255,.07);border-radius:8px;padding:10px 12px}
+.bi-label{font-size:10px;opacity:.6;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.bi-val{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+.bi-pct{font-size:11px;opacity:.5;margin-top:2px}
+.bar{height:4px;border-radius:2px;margin-top:5px;background:rgba(255,255,255,.15)}
+.bar-fill{height:4px;border-radius:2px;transition:width .4s}
+.margin-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.mb{padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:12px;cursor:pointer;font-family:inherit}
+.mb.active{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.4)}
+.mb-inp{width:60px;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-family:inherit;outline:none}
+.save-row{margin-top:12px;display:flex;gap:8px;justify-content:flex-end}
+.save-btn{padding:7px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px}
+.save-btn:hover{background:rgba(255,255,255,.25)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 12px;border-bottom:0.5px solid var(--border);font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:var(--surface2)}
+td{padding:9px 12px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.mono{font-variant-numeric:tabular-nums}
+.right{text-align:right}
+.muted{color:var(--muted)}
+.empty{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+.loading{text-align:center;padding:20px;color:var(--muted);font-size:13px}
+.upak-res-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.upak-res-row:last-child{border-bottom:none;font-weight:500;font-size:14px;padding-top:8px}
+
+/* Цены */
+.price-section{margin-bottom:20px}
+.price-section-title{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.price-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden}
+.price-card-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border)}
+.price-name{font-size:13px;font-weight:500}
+.price-current{font-size:18px;font-weight:300;color:var(--blue);font-variant-numeric:tabular-nums}
+.price-unit{font-size:11px;color:var(--muted)}
+.price-date{font-size:11px;color:var(--muted)}
+.price-edit{padding:10px 14px;display:flex;gap:8px;align-items:flex-end;border-bottom:0.5px solid var(--border)}
+.price-history-btn{padding:8px 14px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;cursor:pointer}
+.price-history-btn:hover{color:var(--text)}
+.history-panel{display:none;padding:0 14px 10px}
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:12px}
+.history-row:last-child{border-bottom:none}
+.history-date{color:var(--muted);min-width:90px}
+.history-price{font-variant-numeric:tabular-nums;font-weight:500}
+.history-note{color:var(--muted);font-size:11px;flex:1;text-align:right;margin-left:8px}
+.diff-up{color:var(--red);font-size:11px}
+.diff-down{color:var(--green);font-size:11px}
+.diff-same{color:var(--muted);font-size:11px}
+
+/* Модал */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:500;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{cursor:pointer;color:var(--muted);font-size:20px;line-height:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon"><i class="ti ti-calculator"></i></div>
+    uzmould / Себестоимость
+  </div>
+  <div id="sync-status"><i class="ti ti-cloud"></i> <span id="sync-text">подключение...</span></div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('calc')"><i class="ti ti-calculator"></i> Калькулятор</button>
+    <button class="tab" onclick="switchTab('list')"><i class="ti ti-list"></i> Продукты</button>
+    <button class="tab" onclick="switchTab('prices')"><i class="ti ti-tags"></i> Цены</button>
+  </div>
+
+  <!-- КАЛЬКУЛЯТОР -->
+  <div class="panel active" id="tab-calc">
+    <div class="card">
+      <div class="card-head"><span class="card-title"><i class="ti ti-user"></i> Клиент и продукт</span></div>
+      <div class="card-body">
+        <div class="g3">
+          <div><label>Клиент</label><input id="c-klient" placeholder="Botir aka..."></div>
+          <div><label>Продукт</label><input id="c-product" placeholder="qopqo katta..."></div>
+          <div><label>Код</label><input id="c-kod" placeholder="123BKQ"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title"><i class="ti ti-tool"></i> Станок</span></div>
+      <div class="card-body">
+        <div class="g3">
+          <div><label>Станок</label><select id="c-stanok" onchange="fillStanok()"><option value="">— выбрать —</option></select></div>
+          <div><label>Стоимость за сутки (сўм)</label><input id="c-sutki" type="number" placeholder="38000000" oninput="calc()"></div>
+          <div><label>Рабочих часов в сутках</label><input id="c-chasov" type="number" value="18" oninput="calc()"><div class="hint">обычно 17, 18 или 20</div></div>
+        </div>
+        <div class="g3">
+          <div><label>Цикл (сек)</label><input id="c-cikl" type="number" placeholder="78" oninput="calc()"></div>
+          <div><label>Гнёздность</label><input id="c-gnezd" type="number" placeholder="1" oninput="calc()"></div>
+          <div><label>Производительность (шт/час)</label><input id="c-prod" readonly></div>
+        </div>
+        <div class="g3">
+          <div><label>Тираж (шт)</label><input id="c-tirazh" type="number" placeholder="20000" oninput="calc()"></div>
+          <div><label>Переналадка (мин)</label><input id="c-perenal" type="number" placeholder="30" oninput="calc()"></div>
+          <div><label>Переналадка итого (сўм)</label><input id="c-perenal-total" readonly></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="ab active" onclick="setKoef(1,this)">Автомат ×1</button>
+          <button class="ab" onclick="setKoef(1.5,this)">Полуавтомат ×1.5</button>
+          <button class="ab" onclick="setKoef(2,this)">Ручной ×2</button>
+          <button class="ab" id="ab-own" onclick="setKoef(null,this)">Свой</button>
+        </div>
+        <div class="g2" id="own-row" style="display:none">
+          <div><label>Свой коэффициент</label><input id="c-koef-own" type="number" step="0.1" oninput="calc()"></div>
+          <div></div>
+        </div>
+        <div class="g2">
+          <div><label>Стоимость часа (авто)</label><input id="c-narh-hour" readonly><div class="hint">= сутки ÷ часов</div></div>
+          <div><label>Услуга станка / шт</label><input id="c-usluga" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title"><i class="ti ti-package"></i> Сырьё</span></div>
+      <div class="card-body">
+        <div class="g4">
+          <div><label>Марка 1</label><input id="r1-name" placeholder="460, 570..."></div>
+          <div><label>Цена (сўм/кг)</label><input id="r1-narh" type="number" oninput="calc()"></div>
+          <div><label>Доля %</label><input id="r1-pct" type="number" value="100" oninput="syncPct(1);calc()"></div>
+          <div><label>Стоимость / шт</label><input id="r1-seb" readonly></div>
+        </div>
+        <div class="g4">
+          <div><label>Марка 2</label><input id="r2-name" placeholder="необязательно"></div>
+          <div><label>Цена (сўм/кг)</label><input id="r2-narh" type="number" oninput="calc()"></div>
+          <div><label>Доля %</label><input id="r2-pct" type="number" value="0" oninput="syncPct(2);calc()"></div>
+          <div><label>Стоимость / шт</label><input id="r2-seb" readonly></div>
+        </div>
+        <div class="g3">
+          <div><label>Вес изделия (кг)</label><input id="r-gramm" type="number" step="0.0001" placeholder="0.270" oninput="calc()"></div>
+          <div><label>Угар %</label><input id="r-ugar" type="number" value="2" oninput="calc()"><div class="hint">2% → ×1.02</div></div>
+          <div><label>Итого сырьё / шт</label><input id="r-total" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title"><i class="ti ti-droplet"></i> Краситель</span></div>
+      <div class="card-body">
+        <div class="g4">
+          <div><label>Краситель</label><select id="c-kras-sel" onchange="fillKras()"><option value="">— выбрать —</option></select></div>
+          <div><label>Цена (сўм/кг)</label><input id="k-narh" type="number" oninput="calc()"></div>
+          <div><label>% от веса</label><input id="k-pct" type="number" step="0.001" placeholder="2" oninput="calc()"></div>
+          <div><label>Краситель / шт</label><input id="k-seb" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title"><i class="ti ti-box"></i> Упаковка</span></div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Стоимость пакета/коробки ÷ количество штук в ней</div>
+        <div class="g3">
+          <div><label>Вид 1</label><input id="u1-name" placeholder="пакет, мешок..."></div>
+          <div><label>Стоимость (сўм)</label><input id="u1-narh" type="number" oninput="calc()"></div>
+          <div><label>Штук в упаковке</label><input id="u1-qty" type="number" oninput="calc()"></div>
+        </div>
+        <div class="g3">
+          <div><label>Вид 2</label><input id="u2-name" placeholder="коробка, ящик..."></div>
+          <div><label>Стоимость (сўм)</label><input id="u2-narh" type="number" oninput="calc()"></div>
+          <div><label>Штук в упаковке</label><input id="u2-qty" type="number" oninput="calc()"></div>
+        </div>
+        <div class="g3">
+          <div><label>Вид 3</label><input id="u3-name" placeholder="паллет..."></div>
+          <div><label>Стоимость (сўм)</label><input id="u3-narh" type="number" oninput="calc()"></div>
+          <div><label>Штук в упаковке</label><input id="u3-qty" type="number" oninput="calc()"></div>
+        </div>
+        <div id="upak-res" style="border-top:0.5px solid var(--border);padding-top:10px;margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title"><i class="ti ti-mold"></i> Пресс-форма</span></div>
+      <div class="card-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Стоимость пресс-формы делится на срок службы (количество циклов)</div>
+        <div class="g4">
+          <div>
+            <label>Цена пресс-формы ($)</label>
+            <input id="pf-usd" type="number" placeholder="3000" oninput="calc()">
+          </div>
+          <div>
+            <label>Курс доллара (сўм)</label>
+            <input id="pf-kurs" type="number" placeholder="12700" oninput="calc()">
+          </div>
+          <div>
+            <label>Срок службы (циклов)</label>
+            <input id="pf-cikls" type="number" placeholder="1000000" oninput="calc()">
+            <div class="hint">обычно 500 000 — 2 000 000</div>
+          </div>
+          <div>
+            <label>Гнёздность формы</label>
+            <input id="pf-gnezd" type="number" placeholder="4" oninput="calc()">
+            <div class="hint">= штук за 1 цикл</div>
+          </div>
+        </div>
+        <div class="g3">
+          <div>
+            <label>Цена формы (сўм)</label>
+            <input id="pf-sum-uzs" readonly>
+          </div>
+          <div>
+            <label>Итого изделий за срок службы</label>
+            <input id="pf-total-pcs" readonly>
+          </div>
+          <div>
+            <label>Пресс-форма / шт (сўм)</label>
+            <input id="pf-per-sht" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-box">
+      <div class="fbox" id="fbox"></div>
+      <div class="result-main">
+        <div>
+          <div class="result-label">Себестоимость 1 шт</div>
+          <div class="result-val" id="res-total">0 сўм</div>
+        </div>
+        <div style="text-align:right">
+          <div class="result-label">Цена продажи</div>
+          <div class="result-price" id="res-price">0 сўм</div>
+        </div>
+      </div>
+      <div class="bdown" id="bdown"></div>
+      <div class="margin-row">
+        <span style="font-size:12px;opacity:.6">Наценка:</span>
+        <button class="mb" onclick="setM(20,this)">+20%</button>
+        <button class="mb active" onclick="setM(30,this)">+30%</button>
+        <button class="mb" onclick="setM(50,this)">+50%</button>
+        <button class="mb" onclick="setM(100,this)">×2</button>
+        <input class="mb-inp" id="m-inp" type="number" value="30" oninput="setM(this.value)">
+        <span style="font-size:12px;opacity:.6">%</span>
+      </div>
+      <div class="save-row">
+        <button class="save-btn" onclick="resetForm()"><i class="ti ti-x"></i> Очистить</button>
+        <button class="save-btn" onclick="saveProduct()"><i class="ti ti-cloud-upload"></i> Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- СПИСОК -->
+  <div class="panel" id="tab-list">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;color:var(--muted)" id="list-count"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="search-inp" placeholder="Поиск..." style="width:160px;padding:7px 10px;font-size:12px" oninput="renderList()">
+        <button class="btn btn-sm" onclick="loadData()"><i class="ti ti-refresh"></i></button>
+      </div>
+    </div>
+    <div class="card"><div id="products-list"><div class="loading">Загрузка...</div></div></div>
+  </div>
+
+  <!-- ЦЕНЫ -->
+  <div class="panel" id="tab-prices">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:500">Справочник цен</div>
+      <button class="btn btn-sm" onclick="loadData()"><i class="ti ti-refresh"></i> Обновить</button>
+    </div>
+    <div id="prices-siryo"></div>
+    <div id="prices-stanki"></div>
+    <div id="prices-krasitel"></div>
+    <div id="prices-upak"></div>
+  </div>
+</div>
+
+<!-- Модал истории -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modal-title-text">История цен</span>
+      <span class="modal-close" onclick="closeModal()">×</span>
+    </div>
+    <div id="modal-body"><div class="loading">Загрузка...</div></div>
+  </div>
+</div>
+
+<script>
+const API='https://script.google.com/macros/s/AKfycby1zDfDcLooG9xFb-TVVphiiElPKqQg8pCMs6nWtKh65l_NnwdVGqzL_Y_S1mhrjX-bng/exec';
+
+// ─── TELEGRAM НАСТРОЙКИ — вставьте свои данные ───────────────
+const TG_TOKEN = 'ВСТАВЬТЕ_ТОКЕН_БОТА_СЮДА';  // из @BotFather
+const TG_CHAT_ID = '7924785446';               // ID группы
+// ─────────────────────────────────────────────────────────────
+let prices={siryo:[],stanki:[],krasitel:[],upak:[]};
+let products=[];
+let koef=1, margin=30, saving=false;
+
+const fmt=n=>Math.round(n).toLocaleString('ru-RU');
+const fmtD=(n,d=2)=>parseFloat(n.toFixed(d)).toLocaleString('ru-RU');
+
+async function apiFetch(params){
+  const r=await fetch(API+'?'+new URLSearchParams(params));
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+async function loadData(){
+  setSyncStatus('load');
+  try{
+    const[pd,prd]=await Promise.all([apiFetch({action:'getPrices'}),apiFetch({action:'getProducts'})]);
+    prices=pd; products=prd.products||[];
+    setSyncStatus('ok');
+    fillSelects(); renderList(); renderPrices();
+  }catch(e){setSyncStatus('err',e.message);}
+}
+
+function setSyncStatus(s,msg){
+  const el=document.getElementById('sync-status');
+  const t=document.getElementById('sync-text');
+  if(s==='ok'){el.className='ok';t.textContent='синхронизировано';}
+  else if(s==='err'){el.className='err';t.textContent='ошибка: '+msg;}
+  else{el.className='';t.textContent='загрузка...';}
+}
+
+function fillSelects(){
+  const stanokSel=document.getElementById('c-stanok');
+  const cv=stanokSel.value;
+  stanokSel.innerHTML='<option value="">— выбрать —</option>'+
+    (prices.stanki||[]).map(s=>`<option value="${s.Название||''}">${s.Название||''} — ${fmt(s['Стоимость_суток']||s['Цена']||0)} сўм/сут</option>`).join('');
+  stanokSel.value=cv;
+
+  const krasSel=document.getElementById('c-kras-sel');
+  const ck=krasSel.value;
+  krasSel.innerHTML='<option value="">— выбрать —</option>'+
+    (prices.krasitel||[]).map(s=>`<option value="${s.Название||''}">${s.Название||''} — ${fmt(s.Цена||0)} сўм/кг</option>`).join('');
+  krasSel.value=ck;
+}
+
+function fillStanok(){
+  const name=document.getElementById('c-stanok').value;
+  const s=(prices.stanki||[]).find(x=>(x.Название||'')==name);
+  if(s){
+    document.getElementById('c-sutki').value=s['Стоимость_суток']||s['Цена']||0;
+    document.getElementById('c-chasov').value=s['Рабочих_часов']||18;
+  }
+  calc();
+}
+
+function fillKras(){
+  const name=document.getElementById('c-kras-sel').value;
+  const s=(prices.krasitel||[]).find(x=>(x.Название||'')==name);
+  if(s)document.getElementById('k-narh').value=s.Цена||0;
+  calc();
+}
+
+function setKoef(v,btn){
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const own=document.getElementById('own-row');
+  if(v===null){own.style.display='grid';koef=parseFloat(document.getElementById('c-koef-own').value)||1;}
+  else{own.style.display='none';koef=v;}
+  calc();
+}
+
+function syncPct(c){
+  const p1=document.getElementById('r1-pct');
+  const p2=document.getElementById('r2-pct');
+  if(c===1)p2.value=Math.max(0,100-Math.min(100,parseFloat(p1.value)||0));
+  else p1.value=Math.max(0,100-Math.min(100,parseFloat(p2.value)||0));
+}
+
+function calc(){
+  if(document.getElementById('ab-own').classList.contains('active')){
+    koef=parseFloat(document.getElementById('c-koef-own').value)||1;
+  }
+  const sSutki=parseFloat(document.getElementById('c-sutki').value)||0;
+  const sChasov=parseFloat(document.getElementById('c-chasov').value)||18;
+  const sNarh=sChasov>0?sSutki/sChasov:0;
+  document.getElementById('c-narh-hour').value=sNarh?fmt(sNarh):'';
+
+  const sCikl=parseFloat(document.getElementById('c-cikl').value)||0;
+  const sGnezd=parseFloat(document.getElementById('c-gnezd').value)||0;
+  const sTirazh=parseFloat(document.getElementById('c-tirazh').value)||0;
+  const sPerenal=parseFloat(document.getElementById('c-perenal').value)||0;
+  const prodPerHour=(sCikl>0&&sGnezd>0)?(3600/sCikl)*sGnezd:0;
+  document.getElementById('c-prod').value=prodPerHour?fmt(prodPerHour):'';
+  const uslugaBase=prodPerHour>0?sNarh/prodPerHour:0;
+  const perenalTotal=(sPerenal/60)*sNarh;
+  const perenalPerSht=sTirazh>0?perenalTotal/sTirazh:0;
+  const usluga=(uslugaBase+perenalPerSht)*koef;
+  document.getElementById('c-usluga').value=usluga?fmtD(usluga,2):'';
+  document.getElementById('c-perenal-total').value=perenalTotal?fmt(perenalTotal):'';
+
+  const gramm=parseFloat(document.getElementById('r-gramm').value)||0;
+  const ugarK=1+(parseFloat(document.getElementById('r-ugar').value)||0)/100;
+  const r1N=parseFloat(document.getElementById('r1-narh').value)||0;
+  const r1P=(parseFloat(document.getElementById('r1-pct').value)||0)/100;
+  const r2N=parseFloat(document.getElementById('r2-narh').value)||0;
+  const r2P=(parseFloat(document.getElementById('r2-pct').value)||0)/100;
+  const r1Seb=gramm*r1P*r1N*ugarK;
+  const r2Seb=gramm*r2P*r2N*ugarK;
+  const rTotal=r1Seb+r2Seb;
+  document.getElementById('r1-seb').value=r1Seb?fmtD(r1Seb,2):'';
+  document.getElementById('r2-seb').value=r2Seb?fmtD(r2Seb,2):'';
+  document.getElementById('r-total').value=rTotal?fmtD(rTotal,2):'';
+
+  const kN=parseFloat(document.getElementById('k-narh').value)||0;
+  const kP=(parseFloat(document.getElementById('k-pct').value)||0)/100;
+  const kSeb=gramm*kP*kN;
+  document.getElementById('k-seb').value=kSeb?fmtD(kSeb,2):'';
+
+  const uItems=[1,2,3].map(i=>({
+    name:document.getElementById(`u${i}-name`).value||`Упаковка ${i}`,
+    narh:parseFloat(document.getElementById(`u${i}-narh`).value)||0,
+    qty:parseFloat(document.getElementById(`u${i}-qty`).value)||0,
+  })).filter(x=>x.narh>0&&x.qty>0);
+  let uTotal=0; uItems.forEach(it=>uTotal+=it.narh/it.qty);
+
+  const upakRes=document.getElementById('upak-res');
+  upakRes.innerHTML=uItems.length?
+    uItems.map(it=>`<div class="upak-res-row"><span style="color:var(--muted)">${it.name}: ${fmt(it.narh)} ÷ ${fmt(it.qty)}</span><span class="mono" style="font-weight:500">${fmtD(it.narh/it.qty,2)} сўм/шт</span></div>`).join('')+
+    `<div class="upak-res-row"><span style="font-weight:500">Итого упаковка / шт</span><span class="mono" style="font-weight:500;color:var(--green)">${fmtD(uTotal,2)} сўм/шт</span></div>`:
+    '<div style="font-size:12px;color:var(--muted)">Введите стоимость и количество</div>';
+
+  // Пресс-форма
+  const pfUsd   = parseFloat(document.getElementById('pf-usd').value)||0;
+  const pfKurs  = parseFloat(document.getElementById('pf-kurs').value)||0;
+  const pfCikls = parseFloat(document.getElementById('pf-cikls').value)||0;
+  const pfGnezd = parseFloat(document.getElementById('pf-gnezd').value)||0;
+  const pfSumUzs = pfUsd * pfKurs;
+  const pfTotalPcs = pfCikls * pfGnezd;
+  const pfPerSht = pfTotalPcs > 0 ? pfSumUzs / pfTotalPcs : 0;
+  document.getElementById('pf-sum-uzs').value  = pfSumUzs  ? fmt(pfSumUzs)   : '';
+  document.getElementById('pf-total-pcs').value= pfTotalPcs? fmt(pfTotalPcs) : '';
+  document.getElementById('pf-per-sht').value  = pfPerSht  ? fmtD(pfPerSht,2): '';
+
+  const total=usluga+rTotal+kSeb+uTotal+pfPerSht;
+  const price=total*(1+margin/100);
+  document.getElementById('res-total').textContent=fmt(total)+' сўм';
+  document.getElementById('res-price').textContent=fmt(price)+' сўм (+'+margin+'%)';
+
+  const ugarPct=parseFloat(document.getElementById('r-ugar').value)||0;
+  const rows=[
+    {n:'Стоимость часа',      f:`${fmt(sSutki)} ÷ ${sChasov} ч`,v:`${fmt(sNarh)} сўм/час`,cls:''},
+    {n:'Производительность',  f:`3600 ÷ ${sCikl} × ${sGnezd}`,v:`${fmt(prodPerHour)} шт/час`,cls:''},
+    {n:'Услуга (база)',        f:`${fmt(sNarh)} ÷ ${fmt(prodPerHour)}`,v:`${fmtD(uslugaBase,2)} сўм/шт`,cls:''},
+    ...(sPerenal&&sTirazh?[
+      {n:'Переналадка итого',  f:`${sPerenal}мин ÷ 60 × ${fmt(sNarh)}`,v:`${fmt(perenalTotal)} сўм`,cls:'perenal'},
+      {n:'Переналадка / шт',   f:`${fmt(perenalTotal)} ÷ ${fmt(sTirazh)}`,v:`${fmtD(perenalPerSht,2)} сўм/шт`,cls:'perenal'},
+    ]:[]),
+    {n:`Станок × ${koef}`,    f:`(${fmtD(uslugaBase,2)} + ${fmtD(perenalPerSht,2)}) × ${koef}`,v:`${fmtD(usluga,2)} сўм/шт`,cls:''},
+    {n:`Сырьё +угар ${ugarPct}%`,f:`${gramm}кг × цена × ${ugarK}`,v:`${fmtD(rTotal,2)} сўм/шт`,cls:''},
+    ...(kSeb?[{n:'Краситель',f:`${gramm}кг × ${(kP*100).toFixed(1)}% × ${fmt(kN)}`,v:`${fmtD(kSeb,2)} сўм/шт`,cls:''}]:[]),
+    ...(uTotal?[{n:'Упаковка',f:uItems.map(it=>`${fmt(it.narh)}÷${fmt(it.qty)}`).join('+'),v:`${fmtD(uTotal,2)} сўм/шт`,cls:''}]:[]),
+    ...(pfPerSht?[{n:'Пресс-форма',f:`$${pfUsd} × ${fmt(pfKurs)} ÷ (${fmt(pfCikls)} × ${pfGnezd})`,v:`${fmtD(pfPerSht,2)} сўм/шт`,cls:''}]:[]),
+    {n:'ИТОГО',f:'',v:`${fmt(total)} сўм/шт`,cls:'total'},
+  ];
+  document.getElementById('fbox').innerHTML=rows.map(r=>
+    `<div class="frow ${r.cls}"><span class="fname">${r.n}</span><span class="fformula">${r.f}</span><span class="fval">${r.v}</span></div>`).join('');
+
+  document.getElementById('bdown').innerHTML=[
+    {label:'Станок ×'+koef,val:usluga,color:'#6fcf97'},
+    {label:'Сырьё +угар',val:rTotal,color:'#56CCF2'},
+    {label:'Краситель',val:kSeb,color:'#F2C94C'},
+    {label:'Упаковка',val:uTotal,color:'#BB87FC'},
+    {label:'Пресс-форма',val:pfPerSht,color:'#FF9F43'},
+  ].map(it=>{
+    const pct=total>0?Math.round(it.val/total*100):0;
+    return `<div class="bi"><div class="bi-label">${it.label}</div><div class="bi-val">${fmt(it.val)} сўм</div><div class="bi-pct">${pct}%</div><div class="bar"><div class="bar-fill" style="width:${pct}%;background:${it.color}"></div></div></div>`;
+  }).join('');
+}
+
+function setM(v,btn){
+  margin=parseFloat(v)||30;
+  document.getElementById('m-inp').value=margin;
+  document.querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  calc();
+}
+
+async function sendToTelegram(text) {
+  if (!TG_TOKEN || TG_TOKEN === 'ВСТАВЬТЕ_ТОКЕН_БОТА_СЮДА') return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TG_CHAT_ID,
+        text,
+        parse_mode: 'HTML',
+      })
+    });
+  } catch(e) {
+    console.warn('Telegram error:', e.message);
+  }
+}
+
+async function saveProduct(){
+  const total=parseFloat(document.getElementById('res-total').textContent.replace(/\D/g,''))||0;
+  if(!total){alert('Сначала заполните данные');return;}
+  if(saving)return;
+  saving=true;
+  const btn=document.querySelector('.save-btn:last-child');
+  btn.textContent='Сохранение...';btn.disabled=true;
+  const uItems=[1,2,3].map(i=>({name:document.getElementById(`u${i}-name`).value||'',narh:parseFloat(document.getElementById(`u${i}-narh`).value)||0,qty:parseFloat(document.getElementById(`u${i}-qty`).value)||0})).filter(x=>x.narh>0&&x.qty>0);
+  let uTotal=0; uItems.forEach(it=>uTotal+=it.narh/it.qty);
+  const params={action:'saveProduct',klient:document.getElementById('c-klient').value||'',product:document.getElementById('c-product').value||'',kod:document.getElementById('c-kod').value||'',stanok:document.getElementById('c-stanok').value||'',sutki:document.getElementById('c-sutki').value||0,chasov:document.getElementById('c-chasov').value||18,cikl:document.getElementById('c-cikl').value||0,gnezd:document.getElementById('c-gnezd').value||0,tirazh:document.getElementById('c-tirazh').value||0,perenal:document.getElementById('c-perenal').value||0,koef,gramm:document.getElementById('r-gramm').value||0,siryo1:document.getElementById('r1-name').value||'',siryo1Narh:document.getElementById('r1-narh').value||0,siryo1Pct:document.getElementById('r1-pct').value||0,siryo2:document.getElementById('r2-name').value||'',siryo2Narh:document.getElementById('r2-narh').value||0,siryo2Pct:document.getElementById('r2-pct').value||0,ugar:document.getElementById('r-ugar').value||0,krasitel:document.getElementById('c-kras-sel').value||'',krasNarh:document.getElementById('k-narh').value||0,krasPct:document.getElementById('k-pct').value||0,upak:JSON.stringify(uItems),upakTotal:uTotal,usluga:document.getElementById('c-usluga').value||0,siryoTotal:document.getElementById('r-total').value||0,krasSeb:document.getElementById('k-seb').value||0,pfUsd:document.getElementById('pf-usd').value||0,pfKurs:document.getElementById('pf-kurs').value||0,pfCikls:document.getElementById('pf-cikls').value||0,pfGnezd:document.getElementById('pf-gnezd').value||0,pfPerSht:document.getElementById('pf-per-sht').value||0,total};
+  try{
+    const res=await apiFetch(params);
+    if(res.error)throw new Error(res.error);
+
+    // Отправка в Telegram
+    const klient = params.klient || '—';
+    const product = params.product || '—';
+    const kod = params.kod ? ` [${params.kod}]` : '';
+    const uItems2 = JSON.parse(params.upak||'[]');
+    const uTotal2 = parseFloat(params.upakTotal)||0;
+    const tgMsg = [
+      `🏭 <b>Новый расчёт себестоимости</b>`,
+      ``,
+      `👤 Клиент: <b>${klient}</b>`,
+      `📦 Продукт: <b>${product}</b>${kod}`,
+      ``,
+      `⚙️ Станок: ${params.stanok||'—'} | ${fmt(params.sutki||0)} сўм/сут × ${params.chasov||18}ч`,
+      `🔄 Цикл: ${params.cikl||0} сек | Гнёзд: ${params.gnezd||0} | Тираж: ${fmt(params.tirazh||0)} шт`,
+      `🛠 Переналадка: ${params.perenal||0} мин`,
+      ``,
+      `🧪 Сырьё 1: ${params.siryo1||'—'} — ${fmt(params.siryo1Narh||0)} сўм/кг (${params.siryo1Pct||0}%)`,
+      params.siryo2 ? `🧪 Сырьё 2: ${params.siryo2} — ${fmt(params.siryo2Narh||0)} сўм/кг (${params.siryo2Pct||0}%)` : '',
+      `⚖️ Вес: ${params.gramm||0} кг | Угар: ${params.ugar||0}%`,
+      params.krasitel ? `🎨 Краситель: ${params.krasitel} — ${fmt(params.krasNarh||0)} сўм/кг (${params.krasPct||0}%)` : '',
+      uTotal2 > 0 ? `📫 Упаковка: ${uItems2.map(u=>`${u.name} ${fmt(u.narh)}÷${fmt(u.qty)}`).join(', ')}` : '',
+      ``,
+      `━━━━━━━━━━━━━━━━━━`,
+      `💰 <b>Себестоимость: ${fmt(params.total||0)} сўм</b>`,
+      `📈 Цена +20%: ${fmt((params.total||0)*1.2)} сўм`,
+      `📈 Цена +30%: ${fmt((params.total||0)*1.3)} сўм`,
+      `📈 Цена +50%: ${fmt((params.total||0)*1.5)} сўм`,
+    ].filter(Boolean).join('\n');
+
+    await sendToTelegram(tgMsg);
+    await loadData();
+    alert('✓ Сохранено в Google Sheets!');
+
+  }catch(e){alert('Ошибка: '+e.message);}
+  finally{saving=false;btn.innerHTML='<i class="ti ti-cloud-upload"></i> Сохранить';btn.disabled=false;}
+}
+
+function resetForm(){
+  ['c-klient','c-product','c-kod','c-sutki','c-cikl','c-gnezd','c-tirazh','c-perenal','r1-name','r1-narh','r2-name','r2-narh','r-gramm','k-narh','k-pct','u1-name','u1-narh','u1-qty','u2-name','u2-narh','u2-qty','u3-name','u3-narh','u3-qty','pf-usd','pf-kurs','pf-cikls','pf-gnezd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('c-chasov').value=18;
+  document.getElementById('r1-pct').value=100;
+  document.getElementById('r2-pct').value=0;
+  document.getElementById('r-ugar').value=2;
+  document.getElementById('c-stanok').value='';
+  document.getElementById('c-kras-sel').value='';
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.ab')[0].classList.add('active');
+  koef=1; document.getElementById('own-row').style.display='none';
+  calc();
+}
+
+function fmtDate(d){
+  if(!d)return '—';
+  try{
+    const dt=new Date(d);
+    if(isNaN(dt))return d;
+    return dt.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }catch(e){return d;}
+}
+
+function renderList(){
+  const q=(document.getElementById('search-inp')?.value||'').toLowerCase();
+  const filtered=products.filter(p=>(p.Klient||'').toLowerCase().includes(q)||(p.Product||'').toLowerCase().includes(q)||(p.Kod||'').toLowerCase().includes(q));
+  document.getElementById('list-count').textContent=filtered.length+' продуктов';
+  if(!filtered.length){document.getElementById('products-list').innerHTML='<div class="empty">Нет продуктов</div>';return;}
+  document.getElementById('products-list').innerHTML=`<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>Клиент</th>
+      <th>Продукт</th>
+      <th>Код</th>
+      <th>Станок</th>
+      <th>Сырьё</th>
+      <th class="right">Станок/шт</th>
+      <th class="right">Сырьё/шт</th>
+      <th class="right">Краситель/шт</th>
+      <th class="right">Упаковка/шт</th>
+      <th class="right">Пресс-форма/шт</th>
+      <th class="right" style="font-weight:600">Себест.</th>
+      <th class="right">+20%</th>
+      <th class="right">+30%</th>
+      <th>Дата</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${filtered.map(p=>{
+      const t=parseFloat(p.Total)||0;
+      const usluga=parseFloat(p.Usluga)||0;
+      const siryoTxt=p.Siryo1||(p.Siryo?p.Siryo:'—');
+      const siryoSeb=parseFloat(p.SiryoSeb||p.SiryoTotal||0)||0;
+      const krasSeb=parseFloat(p.KrasSeb)||0;
+      let upakTotal=parseFloat(p.UpakTotal||p.UpakSeb||0)||0;
+      try{ const ui=JSON.parse(p.Upak||'[]'); if(ui.length){upakTotal=0;ui.forEach(u=>upakTotal+=(u.narh||0)/(u.qty||1));} }catch(e){}
+      const pfSeb=parseFloat(p.PfPerSht)||0;
+      return `<tr>
+        <td>${p.Klient||'—'}</td>
+        <td style="font-weight:500">${p.Product||'—'}</td>
+        <td class="muted">${p.Kod||'—'}</td>
+        <td class="muted">${p.Stanok||'—'}</td>
+        <td class="muted" style="font-size:11px">${siryoTxt}</td>
+        <td class="mono right" style="font-size:11px;color:#6fcf97">${usluga?fmt(usluga):'—'}</td>
+        <td class="mono right" style="font-size:11px;color:#56CCF2">${siryoSeb?fmt(siryoSeb):'—'}</td>
+        <td class="mono right" style="font-size:11px;color:#F2C94C">${krasSeb?fmt(krasSeb):'—'}</td>
+        <td class="mono right" style="font-size:11px;color:#BB87FC">${upakTotal?fmtD(upakTotal,2):'—'}</td>
+        <td class="mono right" style="font-size:11px;color:#FF9F43">${pfSeb?fmtD(pfSeb,2):'—'}</td>
+        <td class="mono right" style="font-weight:600">${fmt(t)}</td>
+        <td class="mono right" style="color:var(--green)">${fmt(t*1.2)}</td>
+        <td class="mono right" style="color:var(--amber)">${fmt(t*1.3)}</td>
+        <td class="muted" style="font-size:11px;white-space:nowrap">${fmtDate(p.Date)}</td>
+        <td><button class="btn btn-sm edit-btn" data-id="${p.ID}"><i class="ti ti-edit" style="font-size:13px"></i></button></td>
+      </tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+}
+
+function loadProduct(id){
+  const p=products.find(x=>String(x.ID)==String(id));
+  if(!p){console.log('not found',id,products.map(x=>x.ID));return;}
+  const set=(elId,v)=>{const el=document.getElementById(elId);if(el&&v!=null&&v!=='')el.value=v;};
+  set('c-klient',p.Klient);
+  set('c-product',p.Product);
+  set('c-kod',p.Kod);
+  set('c-stanok',p.Stanok);
+  set('c-sutki',p.Sutki);
+  set('c-chasov',p.Chasov||18);
+  set('c-cikl',p.Cikl);
+  set('c-gnezd',p.Gnezd);
+  set('c-tirazh',p.Tirazh);
+  set('c-perenal',p.Perenal);
+  // Сырьё — поддержка старого и нового формата
+  set('r1-name', p.Siryo1||p.Siryo||'');
+  set('r1-narh', p.Siryo1Narh||p.SiryoNarh||'');
+  set('r1-pct',  p.Siryo1Pct||100);
+  set('r2-name', p.Siryo2||'');
+  set('r2-narh', p.Siryo2Narh||'');
+  set('r2-pct',  p.Siryo2Pct||0);
+  set('r-gramm', p.Gramm);
+  set('r-ugar',  p.Ugar||2);
+  // Краситель
+  set('k-narh',  p.KrasNarh||p.KrasitelNarh||'');
+  set('k-pct',   p.KrasPct||'');
+  // Пресс-форма
+  set('pf-usd',   p.PfUsd||'');
+  set('pf-kurs',  p.PfKurs||'');
+  set('pf-cikls', p.PfCikls||'');
+  set('pf-gnezd', p.PfGnezd||'');
+  // Коэффициент
+  koef=parseFloat(p.Koef)||1;
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('active'));
+  if(koef==1)     document.querySelectorAll('.ab')[0].classList.add('active');
+  else if(koef==1.5)document.querySelectorAll('.ab')[1].classList.add('active');
+  else if(koef==2)document.querySelectorAll('.ab')[2].classList.add('active');
+  else{
+    document.getElementById('ab-own').classList.add('active');
+    document.getElementById('own-row').style.display='grid';
+    set('c-koef-own',koef);
+  }
+  // Упаковка
+  try{
+    const upakItems=JSON.parse(p.Upak||'[]');
+    [1,2,3].forEach((i,idx)=>{
+      const u=upakItems[idx];
+      document.getElementById(`u${i}-name`).value=u?.name||'';
+      document.getElementById(`u${i}-narh`).value=u?.narh||'';
+      document.getElementById(`u${i}-qty`).value=u?.qty||'';
+    });
+  }catch(e){
+    // старый формат — одно поле UpakSeb
+    document.getElementById('u1-name').value='упаковка';
+    document.getElementById('u1-narh').value=p.UpakSeb||'';
+    document.getElementById('u1-qty').value=1;
+  }
+  switchTab('calc');
+  calc();
+}
+
+// ─── СПРАВОЧНИК ЦЕН ────────────────────────────────────────
+function renderPrices(){
+  renderPriceGroup('prices-siryo','сырьё',prices.siryo||[],'siryo','сўм/кг');
+  renderPriceGroup('prices-stanki','станки',prices.stanki||[],'stanki','сўм/сутки');
+  renderPriceGroup('prices-krasitel','красители',prices.krasitel||[],'krasitel','сўм/кг');
+  renderPriceGroup('prices-upak','упаковка',prices.upak||[],'upak','сўм/шт');
+}
+
+function renderPriceGroup(elId,title,data,sheetName,unit){
+  const el=document.getElementById(elId);
+  const icon={siryo:'ti-package',stanki:'ti-tool',krasitel:'ti-droplet',upak:'ti-box'}[sheetName]||'ti-tag';
+  let html=`<div class="price-section">
+    <div class="price-section-title"><i class="ti ${icon}"></i> ${title.toUpperCase()}</div>
+    <div class="price-grid">`;
+  if(!data.length){
+    html+=`<div style="font-size:12px;color:var(--muted);padding:8px 0">Нет данных — добавьте лист <b>${sheetName}_history</b> в Google Sheets через Scripts</div>`;
+  } else {
+    data.forEach(item=>{
+      const name=item.Название||'';
+      const price=parseFloat(item.Цена||0);
+      const date=item['Дата обновления']||'';
+      html+=`<div class="price-card">
+        <div class="price-card-head">
+          <div>
+            <div class="price-name">${name}</div>
+            <div class="price-date">${date?'обновлено '+date:''}</div>
+          </div>
+          <div>
+            <div class="price-current">${fmt(price)}</div>
+            <div class="price-unit">${unit}</div>
+          </div>
+        </div>
+        <div class="price-edit">
+          <div style="flex:1"><label>Новая цена</label><input type="number" id="pi-${sheetName}-${name}" value="${price}" style="font-size:13px"></div>
+          <div style="width:140px"><label>Примечание</label><input type="text" id="pn-${sheetName}-${name}" placeholder="причина изменения" style="font-size:12px"></div>
+          <button class="btn btn-primary btn-sm" onclick="updatePrice('${sheetName}','${name}','${unit}')" style="align-self:flex-end;margin-bottom:1px"><i class="ti ti-check"></i></button>
+        </div>
+        <div class="price-history-btn" onclick="showHistory('${sheetName}','${name}')">
+          <i class="ti ti-history"></i> История изменений
+        </div>
+        <div class="history-panel" id="hist-${sheetName}-${name}"></div>
+      </div>`;
+    });
+  }
+  html+=`</div></div>`;
+  el.innerHTML=html;
+}
+
+async function updatePrice(sheetName,name,unit){
+  const inp=document.getElementById(`pi-${sheetName}-${name}`);
+  const note=document.getElementById(`pn-${sheetName}-${name}`).value||'';
+  const newPrice=parseFloat(inp.value)||0;
+  if(!newPrice){alert('Введите цену');return;}
+  inp.disabled=true;
+  try{
+    const res=await apiFetch({action:'updatePrice',sheet:sheetName,name,price:newPrice,unit,note});
+    if(res.error)throw new Error(res.error);
+
+    // Telegram — уведомление об изменении цены
+    const category = {siryo:'Сырьё',stanki:'Станок',krasitel:'Краситель',upak:'Упаковка'}[sheetName]||sheetName;
+    const oldPrice = parseFloat(inp.dataset.oldPrice||0);
+    const diff = oldPrice ? (newPrice > oldPrice ? `▲ +${fmt(newPrice-oldPrice)}` : `▼ -${fmt(oldPrice-newPrice)}`) : '';
+    const tgMsg = [
+      `💹 <b>Изменение цены</b>`,
+      ``,
+      `📋 Категория: ${category}`,
+      `📌 Наименование: <b>${name}</b>`,
+      oldPrice ? `🔸 Старая цена: ${fmt(oldPrice)} ${unit}` : '',
+      `🔹 Новая цена: <b>${fmt(newPrice)} ${unit}</b>`,
+      diff ? `📊 Изменение: ${diff} ${unit}` : '',
+      note ? `💬 Причина: ${note}` : '',
+      `🕐 Дата: ${new Date().toLocaleDateString('ru-RU')}`,
+    ].filter(Boolean).join('\n');
+    await sendToTelegram(tgMsg);
+
+    await loadData();
+    alert(`✓ Цена "${name}" обновлена: ${fmt(newPrice)} ${unit}`);
+  }catch(e){alert('Ошибка: '+e.message);}
+  inp.disabled=false;
+}
+
+async function showHistory(sheetName,name){
+  const panel=document.getElementById(`hist-${sheetName}-${name}`);
+  const isOpen=panel.style.display==='block';
+  if(isOpen){panel.style.display='none';return;}
+  panel.style.display='block';
+  panel.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--muted)">Загрузка...</div>';
+  try{
+    const res=await apiFetch({action:'getPriceHistory',sheet:sheetName,name});
+    const rows=res.rows||[];
+    if(!rows.length){panel.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--muted)">История пуста</div>';return;}
+    let prevPrice=null;
+    panel.innerHTML=rows.map((r,i)=>{
+      const price=parseFloat(r.price)||0;
+      let diff='';
+      if(prevPrice!==null){
+        const d=price-prevPrice;
+        if(d>0)diff=`<span class="diff-up">▲ ${fmt(d)}</span>`;
+        else if(d<0)diff=`<span class="diff-down">▼ ${fmt(Math.abs(d))}</span>`;
+        else diff=`<span class="diff-same">—</span>`;
+      }
+      prevPrice=price;
+      return `<div class="history-row">
+        <span class="history-date">${r.date}</span>
+        <span class="history-price">${fmt(price)}</span>
+        ${diff}
+        <span class="history-note">${r.note||''}</span>
+      </div>`;
+    }).join('');
+  }catch(e){panel.innerHTML=`<div style="padding:8px 0;font-size:12px;color:var(--red)">${e.message}</div>`;}
+}
+
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal-overlay')){
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+document.getElementById('products-list').addEventListener('click', function(e){
+  const btn = e.target.closest('.edit-btn');
+  if(btn) loadProduct(btn.dataset.id);
+});
+
+function switchTab(t){
+  const tabs=['calc','list','prices'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  document.querySelectorAll('.panel').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  if(t==='list')renderList();
+  if(t==='prices')renderPrices();
+}
+
+loadData();
+</script>
+</body>
+</html>
