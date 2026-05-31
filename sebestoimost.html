@@ -543,6 +543,7 @@ function setM(v,btn){
 // Telegram отправляется через Apps Script (токен хранится в Script Properties)
 
 async function saveProduct(){
+  calc(); // пересчитываем перед сохранением
   if(!_lastCalc.total){alert('Сначала заполните данные');return;}
   if(saving)return;
   saving=true;
