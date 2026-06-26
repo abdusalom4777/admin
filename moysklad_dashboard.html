@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>МойСклад · Долги и отгрузки</title>
+<style>
+  :root{
+    --ink:#16221f;
+    --paper:#f5f3ee;
+    --card:#ffffff;
+    --line:#e3ded4;
+    --petrol:#0f4c4a;
+    --petrol-soft:#e6efee;
+    --debt:#b3261e;       /* должен нам */
+    --debt-bg:#fbe9e7;
+    --credit:#1f6f4a;     /* мы должны */
+    --credit-bg:#e7f3ec;
+    --muted:#6b7570;
+    --amber:#c9821f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);color:var(--ink);
+    font-feature-settings:"tnum" 1,"lnum" 1;
+    -webkit-font-smoothing:antialiased;
+    padding:18px;max-width:1080px;margin:0 auto;
+  }
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+  header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:21px;letter-spacing:-.3px}
+  .brand .ms{font-size:12px;font-weight:700;color:var(--petrol);background:var(--petrol-soft);
+    padding:3px 8px;border-radius:6px;letter-spacing:.5px;text-transform:uppercase}
+  .status{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#c5c0b4;flex:none}
+  .dot.ok{background:#1f6f4a}.dot.err{background:var(--debt)}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .card .val{font-size:24px;font-weight:700;letter-spacing:-.5px}
+  .card.debt .val{color:var(--debt)}
+  .card.credit .val{color:var(--credit)}
+  .card .val small{font-size:13px;font-weight:600;color:var(--muted);margin-left:3px}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .search{flex:1;min-width:180px;position:relative}
+  .search input{width:100%;padding:11px 12px 11px 36px;border:1px solid var(--line);
+    border-radius:10px;font-size:15px;background:var(--card);color:var(--ink)}
+  .search input:focus{outline:2px solid var(--petrol);outline-offset:0;border-color:transparent}
+  .search svg{position:absolute;left:11px;top:11px;opacity:.45}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+  .seg button{border:0;background:transparent;padding:10px 13px;font-size:13.5px;cursor:pointer;color:var(--muted);font-weight:600}
+  .seg button.active{background:var(--petrol);color:#fff}
+  .reload{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 13px;
+    font-size:13.5px;cursor:pointer;font-weight:600;color:var(--ink)}
+  .reload:active{transform:scale(.97)}
+
+  .tbl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .row{display:grid;grid-template-columns:1fr 130px 150px;gap:10px;align-items:center;
+    padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+  .row:last-child{border-bottom:0}
+  .row.head{cursor:default;background:#faf8f3;position:sticky;top:0}
+  .row.head span{font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+  .row:not(.head):hover{background:#faf8f3}
+  .name{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .name .bar{height:4px;border-radius:3px;background:var(--debt);margin-top:6px;opacity:.5;max-width:100%}
+  .last{font-size:13px;color:var(--muted);text-align:right}
+  .bal{text-align:right;font-weight:700;font-size:15.5px}
+  .bal.debt{color:var(--debt)}.bal.credit{color:var(--credit)}.bal.zero{color:var(--muted);font-weight:600}
+  .bal small{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;opacity:.8}
+
+  .empty,.loading{padding:40px 16px;text-align:center;color:var(--muted);font-size:14.5px}
+  .loading .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--petrol);
+    border-radius:50%;margin:0 auto 12px;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(22,34,31,.45);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:0}
+  .ov.show{display:flex}
+  .sheet{background:var(--card);width:100%;max-width:560px;max-height:85vh;border-radius:16px 16px 0 0;
+    display:flex;flex-direction:column;animation:up .22s ease}
+  @keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+  .sheet h2{font-size:17px;padding:18px 18px 4px}
+  .sheet .sub{padding:0 18px 14px;font-size:13px;color:var(--muted)}
+  .sheet .sub b.debt{color:var(--debt)}.sheet .sub b.credit{color:var(--credit)}
+  .sheet .list{overflow:auto;border-top:1px solid var(--line)}
+  .ship{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line)}
+  .ship:last-child{border-bottom:0}
+  .ship .l{font-size:14px}.ship .l small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .ship .s{font-weight:700;font-size:14.5px;white-space:nowrap}
+  .sheet .close{margin:12px 18px 18px;padding:13px;border:0;background:var(--petrol);color:#fff;
+    border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+  @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:16px}}
+  @media(max-width:560px){
+    .cards{grid-template-columns:1fr;gap:8px}
+    .card{display:flex;justify-content:space-between;align-items:center}
+    .card .lbl{margin-bottom:0}.card .val{font-size:20px}
+    .row{grid-template-columns:1fr 110px}.last{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Долги и отгрузки</h1>
+    <span class="ms">МойСклад</span>
+  </div>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Загрузка…</span></div>
+</header>
+
+<div class="cards">
+  <div class="card debt"><div class="lbl">Всего должны нам</div><div class="val num" id="cTotal">—</div></div>
+  <div class="card"><div class="lbl">Должников</div><div class="val num" id="cCount">—</div></div>
+  <div class="card credit"><div class="lbl">Мы должны</div><div class="val num" id="cCredit">—</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+    <input id="q" placeholder="Поиск контрагента…" autocomplete="off">
+  </div>
+  <div class="seg" id="filter">
+    <button data-f="debt" class="active">Должники</button>
+    <button data-f="all">Все</button>
+    <button data-f="credit">Мы должны</button>
+  </div>
+  <button class="reload" id="reload">Обновить</button>
+</div>
+
+<div class="tbl" id="tbl"></div>
+
+<div class="ov" id="ov">
+  <div class="sheet">
+    <h2 id="mName">—</h2>
+    <div class="sub" id="mSub"></div>
+    <div class="list" id="mList"></div>
+    <button class="close" id="mClose">Закрыть</button>
+  </div>
+</div>
+
+<script>
+/* ───────────────────────────────────────────────
+   НАСТРОЙКА: вставь сюда адрес веб-приложения Apps Script
+   (то, что заканчивается на /exec)
+─────────────────────────────────────────────── */
+const SCRIPT_URL = "ВСТАВЬ_СЮДА_URL_APPS_SCRIPT";
+/* ─────────────────────────────────────────────── */
+
+let DATA = [];
+let curFilter = "debt";
+
+const fmt = n => new Intl.NumberFormat("ru-RU").format(Math.round(Math.abs(n))) + " сум";
+const fmtDate = m => {
+  if(!m) return "—";
+  const d = String(m).slice(0,10).split("-");
+  return d.length===3 ? d[2]+"."+d[1]+"."+d[0] : m;
+};
+const $ = id => document.getElementById(id);
+
+function setStatus(state, txt){
+  const dot = $("dot");
+  dot.className = "dot" + (state==="ok"?" ok":state==="err"?" err":"");
+  $("statusTxt").textContent = txt;
+}
+
+async function load(){
+  if(SCRIPT_URL.indexOf("ВСТАВЬ")===0){
+    $("tbl").innerHTML = '<div class="empty">Сначала впиши адрес Apps Script в строку <b>SCRIPT_URL</b> в коде страницы.</div>';
+    setStatus("err","Не настроен адрес");
+    return;
+  }
+  setStatus("","Загрузка…");
+  $("tbl").innerHTML = '<div class="loading"><div class="spin"></div>Тянем данные из МойСклад…</div>';
+  try{
+    const r = await fetch(SCRIPT_URL + "?action=debts");
+    const j = await r.json();
+    if(j.error) throw new Error(j.error);
+    DATA = (j.rows||[]).sort((a,b)=> b.balance - a.balance);
+    setStatus("ok","Обновлено " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}));
+    renderCards();
+    render();
+  }catch(e){
+    setStatus("err","Ошибка связи");
+    $("tbl").innerHTML = '<div class="empty">Не удалось загрузить.<br>Проверь, что Apps Script опубликован «для всех» и логин/пароль МойСклад прописаны.<br><small>'+e.message+'</small></div>';
+  }
+}
+
+function renderCards(){
+  const debtors = DATA.filter(r=>r.balance>0);
+  const total = debtors.reduce((s,r)=>s+r.balance,0);
+  const credit = DATA.filter(r=>r.balance<0).reduce((s,r)=>s+Math.abs(r.balance),0);
+  $("cTotal").textContent = fmt(total);
+  $("cCount").innerHTML = debtors.length + ' <small>чел.</small>';
+  $("cCredit").textContent = fmt(credit);
+}
+
+function render(){
+  const q = $("q").value.trim().toLowerCase();
+  let rows = DATA.filter(r=>{
+    if(curFilter==="debt" && !(r.balance>0)) return false;
+    if(curFilter==="credit" && !(r.balance<0)) return false;
+    if(q && !(r.name||"").toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const head = '<div class="row head"><span>Контрагент</span><span style="text-align:right">Отгрузка</span><span style="text-align:right">Баланс</span></div>';
+  if(!rows.length){ $("tbl").innerHTML = head + '<div class="empty">Ничего не найдено.</div>'; return; }
+
+  const maxDebt = Math.max(...rows.map(r=>Math.abs(r.balance)),1);
+  $("tbl").innerHTML = head + rows.map((r,i)=>{
+    const cls = r.balance>0?"debt":r.balance<0?"credit":"zero";
+    const tag = r.balance>0?"должен нам":r.balance<0?"мы должны":"ноль";
+    const w = Math.max(4, Math.round(Math.abs(r.balance)/maxDebt*100));
+    const bar = r.balance>0 ? '<div class="bar" style="width:'+w+'%"></div>' : '';
+    return '<div class="row" data-i="'+DATA.indexOf(r)+'">'
+      + '<div><div class="name">'+esc(r.name)+'</div>'+bar+'</div>'
+      + '<div class="last">'+fmtDate(r.lastDemandDate)+'</div>'
+      + '<div class="bal '+cls+'">'+fmt(r.balance)+'<small>'+tag+'</small></div>'
+      + '</div>';
+  }).join("");
+
+  document.querySelectorAll(".row[data-i]").forEach(el=>{
+    el.onclick = ()=> openSheet(DATA[+el.dataset.i]);
+  });
+}
+
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+async function openSheet(r){
+  $("mName").textContent = r.name;
+  const cls = r.balance>0?"debt":r.balance<0?"credit":"";
+  const tag = r.balance>0?"должен нам":r.balance<0?"мы должны ему":"расчётов нет";
+  $("mSub").innerHTML = 'Баланс: <b class="'+cls+'">'+fmt(r.balance)+'</b> · '+tag;
+  $("mList").innerHTML = '<div class="loading"><div class="spin"></div>Загрузка отгрузок…</div>';
+  $("ov").classList.add("show");
+  try{
+    const res = await fetch(SCRIPT_URL + "?action=shipments&id=" + encodeURIComponent(r.id));
+    const j = await res.json();
+    if(j.error) throw new Error(j.error);
+    const ships = j.rows||[];
+    if(!ships.length){ $("mList").innerHTML = '<div class="empty">Отгрузок не найдено.</div>'; return; }
+    const sum = ships.reduce((s,d)=>s+d.sum,0);
+    $("mList").innerHTML = ships.map(d=>
+      '<div class="ship"><div class="l">'+esc(d.name||"Отгрузка")+'<small>'+fmtDate(d.moment)+'</small></div>'
+      + '<div class="s">'+fmt(d.sum)+'</div></div>'
+    ).join("") + '<div class="ship" style="background:#faf8f3"><div class="l"><b>Итого отгружено</b><small>'+ships.length+' шт.</small></div><div class="s">'+fmt(sum)+'</div></div>';
+  }catch(e){
+    $("mList").innerHTML = '<div class="empty">Не удалось загрузить отгрузки.<br><small>'+e.message+'</small></div>';
+  }
+}
+
+$("mClose").onclick = ()=> $("ov").classList.remove("show");
+$("ov").onclick = e=>{ if(e.target===$("ov")) $("ov").classList.remove("show"); };
+$("q").oninput = render;
+$("reload").onclick = load;
+document.querySelectorAll("#filter button").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll("#filter button").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active"); curFilter = b.dataset.f; render();
+  };
+});
+
+load();
+</script>
+</body>
+</html>
