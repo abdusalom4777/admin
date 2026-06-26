@@ -88,10 +88,23 @@
   .sheet .sub{padding:0 18px 14px;font-size:13px;color:var(--muted)}
   .sheet .sub b.debt{color:var(--debt)}.sheet .sub b.credit{color:var(--credit)}
   .sheet .list{overflow:auto;border-top:1px solid var(--line)}
-  .ship{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line)}
+  .ship{border-bottom:1px solid var(--line)}
   .ship:last-child{border-bottom:0}
-  .ship .l{font-size:14px}.ship .l small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-  .ship .s{font-weight:700;font-size:14.5px;white-space:nowrap}
+  .ship-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 18px;cursor:pointer}
+  .ship-head:hover{background:#faf8f3}
+  .ship-head .l{font-size:14px}.ship-head .l small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .ship-head .s{font-weight:700;font-size:14.5px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .ship-head .arrow{font-size:10px;color:var(--muted);transition:transform .2s}
+  .ship.open .arrow{transform:rotate(90deg)}
+  .pos-list{display:none;background:#faf8f3;padding:4px 18px 10px 18px}
+  .ship.open .pos-list{display:block}
+  .pos-row{display:grid;grid-template-columns:1fr 50px 75px 85px;gap:6px;padding:5px 0;
+    border-bottom:1px solid var(--line);font-size:13px;align-items:baseline}
+  .pos-row:last-child{border-bottom:0}
+  .pos-row.pos-head{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:1px solid var(--line)}
+  .pos-row .pname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pos-row .pnum{text-align:right;font-variant-numeric:tabular-nums}
+  .pos-loading{padding:10px 0;font-size:12.5px;color:var(--muted)}
   .sheet .close{margin:12px 18px 18px;padding:13px;border:0;background:var(--petrol);color:#fff;
     border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
   @media(min-width:560px){.ov{align-items:center}.sheet{border-radius:16px}}
@@ -245,12 +258,49 @@ async function openSheet(r){
     const ships = j.rows||[];
     if(!ships.length){ $("mList").innerHTML = '<div class="empty">Отгрузок не найдено.</div>'; return; }
     const sum = ships.reduce((s,d)=>s+d.sum,0);
-    $("mList").innerHTML = ships.map(d=>
-      '<div class="ship"><div class="l">'+esc(d.name||"Отгрузка")+'<small>'+fmtDate(d.moment)+'</small></div>'
-      + '<div class="s">'+fmt(d.sum)+'</div></div>'
-    ).join("") + '<div class="ship" style="background:#faf8f3"><div class="l"><b>Итого отгружено</b><small>'+ships.length+' шт.</small></div><div class="s">'+fmt(sum)+'</div></div>';
+    $("mList").innerHTML = ships.map((d,i)=>
+      '<div class="ship" id="ship'+i+'">'
+      + '<div class="ship-head" data-si="'+i+'" data-did="'+esc(d.id)+'">'
+      + '<div class="l">'+esc(d.name||"Отгрузка")+'<small>'+fmtDate(d.moment)+'</small></div>'
+      + '<div class="s"><span class="arrow">▶</span> '+fmt(d.sum)+'</div>'
+      + '</div>'
+      + '<div class="pos-list" id="pos'+i+'"></div>'
+      + '</div>'
+    ).join("")
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:12px 18px;background:#faf8f3;border-top:1px solid var(--line)"><div><b>Итого отгружено</b><br><small style="color:var(--muted)">'+ships.length+' шт.</small></div><div style="font-weight:700;font-size:14.5px">'+fmt(sum)+'</div></div>';
+
+    document.querySelectorAll(".ship-head").forEach(el=>{
+      el.onclick = ()=> togglePositions(el.dataset.si, el.dataset.did);
+    });
   }catch(e){
     $("mList").innerHTML = '<div class="empty">Не удалось загрузить отгрузки.<br><small>'+e.message+'</small></div>';
+  }
+}
+
+async function togglePositions(si, demandId){
+  const ship = $("ship"+si);
+  const posEl = $("pos"+si);
+  if(ship.classList.contains("open")){ ship.classList.remove("open"); return; }
+  ship.classList.add("open");
+  if(posEl.dataset.loaded){ return; }
+  posEl.innerHTML = '<div class="pos-loading">Загрузка позиций…</div>';
+  try{
+    const res = await fetch(SCRIPT_URL + "?action=positions&id=" + encodeURIComponent(demandId));
+    const j = await res.json();
+    if(j.error) throw new Error(j.error);
+    const items = j.rows||[];
+    if(!items.length){ posEl.innerHTML = '<div class="pos-loading">Позиций нет.</div>'; posEl.dataset.loaded="1"; return; }
+    posEl.innerHTML =
+      '<div class="pos-row pos-head"><span>Товар</span><span class="pnum">Кол-во</span><span class="pnum">Цена</span><span class="pnum">Сумма</span></div>'
+      + items.map(p=>
+        '<div class="pos-row"><span class="pname" title="'+esc(p.name)+'">'+esc(p.name)+'</span>'
+        + '<span class="pnum">'+p.quantity+'</span>'
+        + '<span class="pnum">'+fmt(p.price)+'</span>'
+        + '<span class="pnum">'+fmt(p.sum)+'</span></div>'
+      ).join("");
+    posEl.dataset.loaded = "1";
+  }catch(e){
+    posEl.innerHTML = '<div class="pos-loading">Ошибка: '+e.message+'</div>';
   }
 }
 
