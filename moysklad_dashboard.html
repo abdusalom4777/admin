@@ -180,7 +180,7 @@ async function load(){
     const r = await fetch(SCRIPT_URL + "?action=debts");
     const j = await r.json();
     if(j.error) throw new Error(j.error);
-    DATA = (j.rows||[]).sort((a,b)=> b.balance - a.balance);
+    DATA = (j.rows||[]).sort((a,b)=> a.balance - b.balance);
     setStatus("ok","Обновлено " + new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}));
     renderCards();
     render();
@@ -191,9 +191,9 @@ async function load(){
 }
 
 function renderCards(){
-  const debtors = DATA.filter(r=>r.balance>0);
-  const total = debtors.reduce((s,r)=>s+r.balance,0);
-  const credit = DATA.filter(r=>r.balance<0).reduce((s,r)=>s+Math.abs(r.balance),0);
+  const debtors = DATA.filter(r=>r.balance<0);
+  const total = debtors.reduce((s,r)=>s+Math.abs(r.balance),0);
+  const credit = DATA.filter(r=>r.balance>0).reduce((s,r)=>s+r.balance,0);
   $("cTotal").textContent = fmt(total);
   $("cCount").innerHTML = debtors.length + ' <small>чел.</small>';
   $("cCredit").textContent = fmt(credit);
@@ -202,8 +202,8 @@ function renderCards(){
 function render(){
   const q = $("q").value.trim().toLowerCase();
   let rows = DATA.filter(r=>{
-    if(curFilter==="debt" && !(r.balance>0)) return false;
-    if(curFilter==="credit" && !(r.balance<0)) return false;
+    if(curFilter==="debt" && !(r.balance<0)) return false;
+    if(curFilter==="credit" && !(r.balance>0)) return false;
     if(q && !(r.name||"").toLowerCase().includes(q)) return false;
     return true;
   });
@@ -213,10 +213,10 @@ function render(){
 
   const maxDebt = Math.max(...rows.map(r=>Math.abs(r.balance)),1);
   $("tbl").innerHTML = head + rows.map((r,i)=>{
-    const cls = r.balance>0?"debt":r.balance<0?"credit":"zero";
-    const tag = r.balance>0?"должен нам":r.balance<0?"мы должны":"ноль";
+    const cls = r.balance<0?"debt":r.balance>0?"credit":"zero";
+    const tag = r.balance<0?"должен нам":r.balance>0?"мы должны":"ноль";
     const w = Math.max(4, Math.round(Math.abs(r.balance)/maxDebt*100));
-    const bar = r.balance>0 ? '<div class="bar" style="width:'+w+'%"></div>' : '';
+    const bar = r.balance<0 ? '<div class="bar" style="width:'+w+'%"></div>' : '';
     return '<div class="row" data-i="'+DATA.indexOf(r)+'">'
       + '<div><div class="name">'+esc(r.name)+'</div>'+bar+'</div>'
       + '<div class="last">'+fmtDate(r.lastDemandDate)+'</div>'
@@ -233,8 +233,8 @@ function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":
 
 async function openSheet(r){
   $("mName").textContent = r.name;
-  const cls = r.balance>0?"debt":r.balance<0?"credit":"";
-  const tag = r.balance>0?"должен нам":r.balance<0?"мы должны ему":"расчётов нет";
+  const cls = r.balance<0?"debt":r.balance>0?"credit":"";
+  const tag = r.balance<0?"должен нам":r.balance>0?"мы должны ему":"расчётов нет";
   $("mSub").innerHTML = 'Баланс: <b class="'+cls+'">'+fmt(r.balance)+'</b> · '+tag;
   $("mList").innerHTML = '<div class="loading"><div class="spin"></div>Загрузка отгрузок…</div>';
   $("ov").classList.add("show");
